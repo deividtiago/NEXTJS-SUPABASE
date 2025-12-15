@@ -83,3 +83,21 @@ supabase/config.toml
 # ========================
 .DS_Store
 Thumbs.db
+
+# ========================
+# PLAYWRIGHT TEST RESULTS
+# ========================
+playwright-report/
+test-results/
+
+# ========================
+# SUPABASE TEMPORARY FILES
+# ========================
+**/.temp/
+supabase/.temp/
+frontend/supabase/.temp/
+
+# ========================
+# JEST CONFIG (se for temporário)
+# ========================
+jest.config.ts
