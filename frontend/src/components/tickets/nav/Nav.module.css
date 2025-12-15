@@ -1,0 +1,117 @@
+.header {
+    background-color: #1a1d24;
+    padding: 1.5rem 2rem;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.titleBar {
+    width: 4px;
+    height: 28px;
+    background-color: #f59e0b;
+    border-radius: 2px;
+}
+
+.titleText {
+    color: #e5e7eb;
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.titleBrand {
+    font-weight: 700;
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.navList {
+    display: flex;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.link,
+.linkActive {
+    display: inline-block;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 1px solid #374151;
+    background-color: transparent;
+    color: #9ca3af;
+}
+
+.linkActive {
+    background-color: #06b6d4;
+    color: white;
+    border-color: #06b6d4;
+}
+
+.link:hover {
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
+.logoutButton {
+    display: inline-block;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background-color: #4b5563;
+    color: white;
+    border: 1px solid #4b5563;
+    transition: background-color 0.2s;
+}
+
+.logoutButton:hover {
+    background-color: #6b7280;
+}
+
+.divider {
+    margin-top: 1.5rem;
+    height: 1px;
+    background-color: #374151;
+}
+
+.logoutButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.inactivityWarning {
+    color: #9ca3af;
+    font-size: 0.875rem;
+}

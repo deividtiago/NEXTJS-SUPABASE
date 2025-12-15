@@ -1,0 +1,126 @@
+.ticketStatusGreen { 
+    color: #7FBF7F;
+    font-weight: 600;
+}
+
+.authorAndDate { 
+    color: #6B7280;
+    font-size: 0.875rem;
+}
+
+.authorAndDate strong { 
+    color: #E5E7EB;
+}
+
+.ticketDetails { 
+    border: 1px solid #374151;
+    border-radius: 8px;
+    background-color: #1F2937;
+    padding: 1.5rem;
+    max-width: 800px;
+}
+
+.ticketDetails > header { 
+    border-bottom: 1px solid #374151;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ticketDetails > header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: #E5E7EB;
+}
+
+.ticketDetails h3 {
+    font-size: 1.5rem;
+    color: #FFFFFF;
+    margin: 0 0 1.5rem 0;
+    font-weight: 600;
+}
+
+.ticketDetails section p {
+    color: #9CA3AF;
+    line-height: 1.6;
+    margin: 0 0 2rem 0;
+}
+
+/* Estilos para a seção de comentários */
+.ticketDetails footer h3 {
+    font-size: 1.25rem;
+    color: #FFFFFF;
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+}
+
+.ticketDetails footer form {
+    margin-bottom: 1.5rem;
+}
+
+.ticketDetails footer textarea {
+    width: 100%;
+    background-color: #111827;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 1rem;
+    color: #9CA3AF;
+    font-family: inherit;
+    font-size: 0.95rem;
+    min-height: 80px;
+    margin-bottom: 1rem;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.ticketDetails footer textarea::placeholder {
+    color: #6B7280;
+}
+
+.ticketDetails footer button {
+    width: 100%;
+    background-color: #0EA5E9;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    padding: 0.875rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.ticketDetails footer button:hover {
+    background-color: #0284C7;
+}
+
+.ticketDetails footer section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ticketDetails footer article {
+    background-color: #374151;
+    border: none;
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+}
+
+.ticketDetails footer article strong {
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    display: inline;
+    margin-right: 0.5rem;
+}
+
+.ticketDetails footer article time {
+    color: #9CA3AF;
+    font-size: 0.875rem;
+    display: inline;
+}
+
+.ticketDetails footer article p {
+    color: #D1D5DB;
+    line-height: 1.5;
+    margin: 0.5rem 0 0 0;
+}
