@@ -2,12 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Nav.module.css";
-import { getSupabaseBrowserClient } from "@/supabase-utils/browserClient";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 export default function Nav() {
     const pathname = usePathname();
-    const supabase = getSupabaseBrowserClient();
     
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -24,7 +22,7 @@ export default function Nav() {
     }, [hasUnsavedChanges]);
 
     // ========================================
-    // 🔥 LOGOUT SIMPLIFICADO (USA ROTA EXISTENTE)
+    // 🔥 LOGOUT - CHAMA ROTA DO SERVIDOR
     // ========================================
     
     const handleLogout = useCallback(async (event?: React.MouseEvent) => {
@@ -46,19 +44,23 @@ export default function Nav() {
         isLoggingOutRef.current = true;
         
         try {
-            console.log('🚪 Iniciando logout...');
+            console.log('🚪 Chamando logout no servidor...');
 
-            // 🔥 Usar a rota de logout existente
-            const { error } = await supabase.auth.signOut();
+            // 🔥 CHAMAR ROTA DE LOGOUT NO SERVIDOR
+            const response = await fetch('/logout', {
+                method: 'POST',
+                credentials: 'include', // Incluir cookies
+            });
 
-            if (error) {
-                console.error('Erro no logout:', error);
-                throw error;
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Erro ao realizar logout');
             }
 
             console.log('✅ Logout bem-sucedido');
 
-            // Limpar dados locais (apenas sessionStorage para UX)
+            // Limpar dados locais (apenas UX, segurança é no servidor)
             sessionStorage.clear();
             
             // Redirecionar para login
@@ -75,33 +77,7 @@ export default function Nav() {
             setIsLoggingOut(false);
             isLoggingOutRef.current = false;
         }
-    }, [supabase.auth]);
-
-    // ========================================
-    // LISTENER DE MUDANÇAS DE AUTH
-    // ========================================
-    
-    useEffect(() => {
-        let mounted = true;
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (!mounted) return;
-            
-            console.log('🔄 Auth state changed:', event);
-            
-            // Se detectar logout em outra tab
-            if (event === 'SIGNED_OUT' && !isLoggingOutRef.current) {
-                console.log('🔀 Logout detectado em outra aba');
-                sessionStorage.clear();
-                window.location.href = '/login?reason=multiple_tabs';
-            }
-        });
-
-        return () => {
-            mounted = false;
-            subscription.unsubscribe();
-        };
-    }, [supabase.auth]);
+    }, []);
 
     // ========================================
     // PREVENÇÃO DE NAVEGAÇÃO COM DADOS NÃO SALVOS
