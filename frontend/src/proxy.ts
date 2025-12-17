@@ -1,4 +1,4 @@
-// src/middleware.ts - TUDO VAI PARA /auth/verify
+// src/middleware.ts - CORRIGIDO
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -9,6 +9,7 @@ const SECURITY_HEADERS = {
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
 };
 
 const PROTECTED_ROUTES = [
@@ -16,7 +17,6 @@ const PROTECTED_ROUTES = [
   '/dashboard', 
   '/profile',
   '/settings',
-  '/api/protected'
 ];
 
 const PUBLIC_ROUTES = [
@@ -29,6 +29,61 @@ const PUBLIC_ROUTES = [
   '/auth',
   '/tickets/change-password',
 ];
+
+// 🔥 VALIDAÇÃO DE REDIRECT NO SERVIDOR
+function isSafeRedirectUrl(url: string, baseUrl: string): boolean {
+  try {
+    const parsed = new URL(url, baseUrl);
+    const base = new URL(baseUrl);
+    
+    // Validar origem
+    if (parsed.origin !== base.origin) {
+      console.warn('[SECURITY] Blocked external redirect:', url);
+      return false;
+    }
+    
+    // Validar protocolo
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      console.warn('[SECURITY] Blocked non-HTTP redirect:', url);
+      return false;
+    }
+    
+    // Validar path (prevenir ../)
+    if (parsed.pathname.includes('..')) {
+      console.warn('[SECURITY] Blocked path traversal:', url);
+      return false;
+    }
+    
+    return true;
+  } catch {
+    console.warn('[SECURITY] Invalid URL:', url);
+    return false;
+  }
+}
+
+function getSafeRedirectPath(request: NextRequest): string {
+  const url = new URL(request.url);
+  
+  const returnUrl = url.searchParams.get('returnUrl') || 
+                    url.searchParams.get('redirect') ||
+                    url.searchParams.get('return_to');
+  
+  if (!returnUrl) {
+    return '/tickets';
+  }
+  
+  if (!isSafeRedirectUrl(returnUrl, request.url)) {
+    console.warn('[SECURITY] Unsafe redirect blocked, using default');
+    return '/tickets';
+  }
+  
+  try {
+    const parsed = new URL(returnUrl, request.url);
+    return parsed.pathname + parsed.search;
+  } catch {
+    return '/tickets';
+  }
+}
 
 function addSecurityHeaders(response: NextResponse): NextResponse {
   Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
@@ -70,44 +125,35 @@ export async function middleware(request: NextRequest) {
   if (type) console.log(`   📝 Type: ${type}`);
   
   // ========================================
-  // FLUXO DE AUTENTICAÇÃO - TUDO PARA /auth/verify
+  // FLUXO DE AUTENTICAÇÃO
   // ========================================
   
-  // Se houver CODE ou TOKEN_HASH → redireciona para /auth/verify
   if ((code || token_hash) && pathname !== '/auth/verify') {
     console.log(`🔄 [AUTH] Redirecionando ${pathname} → /auth/verify`);
     
     const verifyUrl = new URL('/auth/verify', request.url);
-    // Usa token_hash se existir, senão usa code
     const tokenValue = token_hash || code || '';
     verifyUrl.searchParams.set('token_hash', tokenValue);
-    
-    // 🔥 CORREÇÃO: Preservar o type que veio na URL original
-    if (type) {
-      verifyUrl.searchParams.set('type', type);
-    } else {
-      verifyUrl.searchParams.set('type', 'magiclink');
-    }
+    verifyUrl.searchParams.set('type', type || 'magiclink');
     
     const response = NextResponse.redirect(verifyUrl);
     return addSecurityHeaders(response);
   }
   
-  // /auth/verify SEMPRE passa direto
   if (pathname === '/auth/verify') {
     console.log(`✅ [AUTH] Permitindo acesso ao handler de autenticação`);
     const response = NextResponse.next();
     return addSecurityHeaders(response);
   }
   
-  // ========================================
-  // DEMAIS ROTAS
-  // ========================================
-  
   if (shouldSkipMiddleware(pathname)) {
     const response = NextResponse.next();
     return addSecurityHeaders(response);
   }
+  
+  // ========================================
+  // VALIDAÇÃO DE SESSÃO
+  // ========================================
   
   try {
     const cookieStore = await cookies();
@@ -120,18 +166,18 @@ export async function middleware(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
-            // No middleware não modificamos cookies
-          },
-          remove(name: string, options: any) {
-            // No middleware não modificamos cookies
-          },
+          set() {},
+          remove() {},
         },
       }
     );
     
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    // 🔥 CORREÇÃO: Usar getUser() em vez de getSession()
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      console.log(`   ⚠️ Erro ao validar usuário: ${error.message}`);
+    }
     
     console.log(`   👤 Usuário: ${user ? user.email : 'NÃO AUTENTICADO'}`);
     
@@ -139,24 +185,36 @@ export async function middleware(request: NextRequest) {
       pathname === route || pathname.startsWith(route + '/')
     );
     
+    // ========================================
+    // PROTEÇÃO DE ROTAS
+    // ========================================
+    
     if (isProtectedRoute && !user) {
       console.log(`🚫 [AUTH] Redirecionando para /login`);
       
-      if (pathname.startsWith('/api/')) {
-        return addSecurityHeaders(NextResponse.json(
-          { error: 'Não autorizado' },
-          { status: 401 }
-        ));
+      const loginUrl = new URL('/login', request.url);
+      
+      // Validar redirect antes de adicionar
+      if (isSafeRedirectUrl(pathname, request.url)) {
+        loginUrl.searchParams.set('redirect', pathname);
       }
       
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
       return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
     
+    // ========================================
+    // REDIRECIONAMENTO PÓS-LOGIN
+    // ========================================
+    
     if (user && (pathname === '/login' || pathname === '/register')) {
-      console.log(`↪️ [AUTH] Usuário autenticado, redirecionando para /tickets`);
-      return addSecurityHeaders(NextResponse.redirect(new URL('/tickets', request.url)));
+      console.log(`↪️ [AUTH] Usuário autenticado, redirecionando`);
+      
+      const safePath = getSafeRedirectPath(request);
+      console.log(`   → Redirecionando para: ${safePath}`);
+      
+      return addSecurityHeaders(
+        NextResponse.redirect(new URL(safePath, request.url))
+      );
     }
     
     const response = NextResponse.next();
